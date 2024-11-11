@@ -27,8 +27,11 @@ async def main():
 
     skippeddevices = []
 
-    with open("downloads.json", "r") as f:
-        downloads = json.load(f)
+    with open("available_downloads.json", "r") as f:
+        avail_downloads = json.load(f)
+        
+    with open("downloads.json", "r") as rf:
+        real_downloads = json.load(rf)
 
     devices_url = "https://raw.githubusercontent.com/PixelBuildsROM/pixelbuilds_devices/main/devices.json"
 
@@ -112,26 +115,28 @@ async def main():
         print(f"{deviceDownloads} downloads in total for {codename}")
 
         try:
-            downloads[codename]
+            avail_downloads[codename]
         except KeyError:
-            downloads[codename] = 0
+            avail_downloads[codename] = 0
 
-        previous = downloads[codename]
+        previous = avail_downloads[codename]
 
-        downloads[codename] = deviceDownloads
+        avail_downloads[codename] = deviceDownloads
 
-        totalDownloads += downloads[codename]
+        totalDownloads += avail_downloads[codename]
         totalPrevious += previous
 
-        diff = downloads[codename] - previous
+        diff = avail_downloads[codename] - previous
 
-        downloads[codename + "_diff"] = diff
-
-        message += f"\n{codename}: {deviceDownloads}"
-        if diff != 0:
-            message += f" (+{diff})" if diff > 0 else f" ({diff})"
-
-        print("")
+        avail_downloads[codename + "_diff"] = diff
+        
+        message += f"\n{codename}: {real_downloads[codename]}"
+        
+        if diff > 0 :
+            real_downloads[codename] += diff
+            real_downloads[codename + "_diff"] = diff
+            message += f" (+{diff})"
+            print("")
 
     totalDiff = totalDownloads - totalPrevious
 
@@ -146,24 +151,28 @@ async def main():
 
         message += "\n"
         message += "\n"
+        
+    if totalDiff > 0:
+        real_downloads["_total"] += totalDiff
+        real_downloads["_total_diff"] = totalDiff
+        real_downloads["_date"] = date
+        message += f"Total: {real_downloads["_total"]}"
+        message += f" (+{real_downloads["_total_diff"]})"
+        with open("downloads.json", "w") as rf:
+            rf.write(json.dumps(real_downloads, indent=2, sort_keys=True, default=str))
+        print(message)
 
-    message += f"Total: {totalDownloads}"
-    if totalDiff != 0:
-        message += f" (+{totalDiff})" if totalDiff > 0 else f" ({totalDiff})"
+    avail_downloads["_date"] = date
 
-    downloads["_date"] = date
-
-    downloads["_total"] = totalDownloads
-    downloads["_total_diff"] = totalDiff
-
-    print(message)
+    avail_downloads["_total"] = totalDownloads
+    avail_downloads["_total_diff"] = totalDiff
 
     # Write to JSON
-    with open("downloads.json", "w") as f:
-        f.write(json.dumps(downloads, indent=2, sort_keys=True, default=str))
+    with open("available_downloads.json", "w") as f:
+        f.write(json.dumps(avail_downloads, indent=2, sort_keys=True, default=str))
 
     # Send telegram message with results
-    if TG_BOT_TOKEN and TG_CHAT_ID:
+    if TG_BOT_TOKEN and TG_CHAT_ID and totalDiff > 0:
         bot = telegram.Bot(TG_BOT_TOKEN)
         async with bot:
             await bot.send_message(text=message, chat_id=TG_CHAT_ID)
