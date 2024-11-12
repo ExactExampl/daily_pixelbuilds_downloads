@@ -26,6 +26,7 @@ async def main():
     totalDownloads = totalPrevious = diff = 0
 
     skippeddevices = []
+    negatives = 0
 
     with open("available_downloads.json", "r") as f:
         avail_downloads = json.load(f)
@@ -130,6 +131,9 @@ async def main():
 
         avail_downloads[codename + "_diff"] = diff
         
+        if diff < 0:
+            negatives += abs(diff) 
+        
         message += f"\n{codename}: {real_downloads[codename]}"
         
         if diff > 0 :
@@ -153,8 +157,12 @@ async def main():
         message += "\n"
         
     if totalDiff > 0:
-        real_downloads["_total"] += totalDiff
-        real_downloads["_total_diff"] = totalDiff
+        if negatives > 0:
+            real_downloads["_total"] += totalDiff + negatives
+            real_downloads["_total_diff"] = totalDiff + negatives
+        else:
+            real_downloads["_total"] += totalDiff
+            real_downloads["_total_diff"] = totalDiff
         real_downloads["_date"] = date
         message += f"Total: {real_downloads["_total"]}"
         message += f" (+{real_downloads["_total_diff"]})"
