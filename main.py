@@ -164,8 +164,8 @@ async def main():
             real_downloads["_total"] += totalDiff
             real_downloads["_total_diff"] = totalDiff
         real_downloads["_date"] = date
-        message += f"Total: {real_downloads["_total"]}"
-        message += f" (+{real_downloads["_total_diff"]})"
+        message += f"Total: {real_downloads['_total']}"
+        message += f" (+{real_downloads['_total_diff']})"
         with open("downloads.json", "w") as rf:
             rf.write(json.dumps(real_downloads, indent=2, sort_keys=True, default=str))
         print(message)
