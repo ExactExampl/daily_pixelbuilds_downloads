@@ -47,6 +47,10 @@ async def main():
         deviceDownloads = 0
 
         print(f"Processing {manufacturer}/{codename}...")
+        
+        if codename not in real_downloads:
+            real_downloads[codename] = 0
+            real_downloads[codename + "_diff"] = 0
 
         deviceresponse_github = requests.get(
             f"https://api.github.com/repos/PixelBuilds-Releases/{codename}/releases"
