@@ -17,7 +17,8 @@ import telegram
 
 async def main():
     load_dotenv("config.env")
-
+    
+    GITHUB_KEY = os.environ.get("GH_KEY")
     TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN")
     TG_CHAT_ID = os.environ.get("TG_CHAT_ID")
 
@@ -48,15 +49,23 @@ async def main():
 
         print(f"Processing {manufacturer}/{codename}...")
         
+        headers = {}
+        
+        if GITHUB_KEY:
+            headers["Authorization"] = f"Bearer {GITHUB_KEY}"
+        
         if codename not in real_downloads:
             real_downloads[codename] = 0
             real_downloads[codename + "_diff"] = 0
 
         deviceresponse_github = requests.get(
-            f"https://api.github.com/repos/PixelBuilds-Releases/{codename}/releases"
+            f"https://api.github.com/repos/PixelBuilds-Releases/{codename}/releases",
+            headers=headers,
+            timeout=3
         )
         deviceresponse_gitea = requests.get(
-            f"https://git.pixelbuilds.org/api/v1/repos/releases/{codename}/releases"
+            f"https://git.pixelbuilds.org/api/v1/repos/releases/{codename}/releases",
+            timeout=3
         )
 
         if (
@@ -132,7 +141,6 @@ async def main():
         totalPrevious += previous
 
         diff = avail_downloads[codename] - previous
-
         avail_downloads[codename + "_diff"] = diff
         
         if diff < 0:
@@ -147,10 +155,10 @@ async def main():
             print("")
 
     totalDiff = totalDownloads - totalPrevious
-
+    
+    # Construct a message
     message += "\n"
     message += "\n"
-
     if len(skippeddevices) > 0:
         message += "Skipped devices:"
 
@@ -160,6 +168,7 @@ async def main():
         message += "\n"
         message += "\n"
         
+    # Write real downloads json
     if totalDiff > 0:
         if negatives > 0:
             real_downloads["_total"] += totalDiff + negatives
@@ -173,13 +182,10 @@ async def main():
         with open("downloads.json", "w") as rf:
             rf.write(json.dumps(real_downloads, indent=2, sort_keys=True, default=str))
         print(message)
-
+    # Write available downloads json
     avail_downloads["_date"] = date
-
     avail_downloads["_total"] = totalDownloads
     avail_downloads["_total_diff"] = totalDiff
-
-    # Write to JSON
     with open("available_downloads.json", "w") as f:
         f.write(json.dumps(avail_downloads, indent=2, sort_keys=True, default=str))
 
@@ -188,7 +194,6 @@ async def main():
         bot = telegram.Bot(TG_BOT_TOKEN)
         async with bot:
             await bot.send_message(text=message, chat_id=TG_CHAT_ID)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
