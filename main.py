@@ -13,6 +13,7 @@ import json
 import os
 import requests
 import telegram
+import sys
 
 
 async def main():
@@ -79,6 +80,10 @@ async def main():
             )
             skippeddevices.append(f"{codename} - no data from both GitHub and Gitea")
             continue
+        
+        if (deviceresponse_github.status_code == 403):
+            print("Rate limited by GitHub! Giving up to avoid disaster")
+            sys.exit(1)
 
         if deviceresponse_github.status_code == 200:
             if len(deviceresponse_github.json()) == 0:
