@@ -18,7 +18,7 @@ import sys
 
 async def main():
     load_dotenv("config.env")
-    
+
     GITHUB_KEY = os.environ.get("GH_KEY")
     TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN")
     TG_CHAT_ID = os.environ.get("TG_CHAT_ID")
@@ -32,7 +32,7 @@ async def main():
 
     with open("available_downloads.json", "r") as f:
         avail_downloads = json.load(f)
-        
+
     with open("downloads.json", "r") as rf:
         real_downloads = json.load(rf)
 
@@ -49,12 +49,12 @@ async def main():
         deviceDownloads = 0
 
         print(f"Processing {manufacturer}/{codename}...")
-        
+
         headers = {}
-        
+
         if GITHUB_KEY:
             headers["Authorization"] = f"Bearer {GITHUB_KEY}"
-        
+
         if codename not in real_downloads:
             real_downloads[codename] = 0
             real_downloads[codename + "_diff"] = 0
@@ -80,7 +80,7 @@ async def main():
             )
             skippeddevices.append(f"{codename} - no data from both GitHub and Gitea")
             continue
-        
+
         if (deviceresponse_github.status_code == 403):
             print("Rate limited by GitHub! Giving up to avoid disaster")
             sys.exit(1)
@@ -147,20 +147,20 @@ async def main():
 
         diff = avail_downloads[codename] - previous
         avail_downloads[codename + "_diff"] = diff
-        
+
         if diff < 0:
-            negatives += abs(diff) 
-        
+            negatives += abs(diff)
+
         message += f"\n{codename}: {real_downloads[codename]}"
-        
-        if diff > 0 :
+
+        if diff > 0:
             real_downloads[codename] += diff
             real_downloads[codename + "_diff"] = diff
             message += f" (+{diff})"
             print("")
 
     totalDiff = totalDownloads - totalPrevious
-    
+
     # Construct a message
     message += "\n"
     message += "\n"
@@ -172,7 +172,7 @@ async def main():
 
         message += "\n"
         message += "\n"
-        
+
     # Write real downloads json
     if totalDiff > 0:
         if negatives > 0:
